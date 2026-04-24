@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentes de LLM — Gustavo Pinto</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #2a2a2a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  #slideshow-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #slide-wrapper {
+    position: relative;
+    width: 1456px;
+    height: 816px;
+    transform-origin: center center;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1456px;
+    height: 816px;
+    background: #fff;
+    display: none;
+    overflow: hidden;
+  }
+
+  .slide.active { display: flex; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 112px;
+    min-width: 112px;
+    height: 100%;
+    background: #F0A500;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 32px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-size: 52px;
+    font-weight: 900;
+    color: #1a1a1a;
+    letter-spacing: -1px;
+    white-space: nowrap;
+  }
+
+  /* ── Main content area ── */
+  .content {
+    flex: 1;
+    height: 100%;
+    padding: 56px 72px 56px 64px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide-title {
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-size: 58px;
+    font-weight: 900;
+    color: #1a1a1a;
+    line-height: 1.1;
+    margin-bottom: 40px;
+  }
+
+  .slide-title.centered { text-align: center; }
+
+  .slide-subtitle {
+    font-size: 26px;
+    color: #555;
+    margin-bottom: 28px;
+    font-style: italic;
+  }
+
+  .slide-body {
+    font-size: 28px;
+    color: #1a1a1a;
+    line-height: 1.5;
+  }
+
+  ul.bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  ul.bullets li {
+    font-size: 28px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  ul.bullets li::before {
+    content: "•";
+    font-size: 32px;
+    color: #1a1a1a;
+    flex-shrink: 0;
+    line-height: 1.3;
+  }
+
+  ul.bullets li.current {
+    font-weight: bold;
+  }
+
+  ul.bullets li.current span {
+    text-decoration: underline;
+  }
+
+  /* ── Cover slide ── */
+  .cover-slide {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 60px 80px;
+    background: #fff;
+  }
+
+  .cover-banner {
+    background: #F0A500;
+    border-radius: 6px;
+    padding: 28px 48px;
+    margin-bottom: 64px;
+    width: 100%;
+  }
+
+  .cover-banner h1 {
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-size: 96px;
+    font-weight: 900;
+    color: #1a1a1a;
+    line-height: 1.05;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+  }
+
+  .cover-author {
+    display: flex;
+    align-items: flex-start;
+    gap: 64px;
+  }
+
+  .author-photo {
+    width: 240px;
+    height: 280px;
+    background: #e8d5b0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 80px;
+    flex-shrink: 0;
+  }
+
+  .author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-top: 16px;
+  }
+
+  .author-contact {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 32px;
+    color: #1a1a1a;
+  }
+
+  .contact-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  .icon-twitter { background: #1DA1F2; color: white; }
+  .icon-email   { background: #4285F4; color: white; }
+  .icon-web     { background: #34A853; color: white; }
+  .icon-linkedin{ background: #0077B5; color: white; }
+
+  .author-name {
+    font-size: 30px;
+    font-weight: bold;
+    color: #1a1a1a;
+    margin-top: 8px;
+  }
+
+  /* ── Two-column ── */
+  .two-col {
+    display: flex;
+    gap: 0;
+    flex: 1;
+    align-items: stretch;
+  }
+
+  .col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px 32px;
+  }
+
+  .col-divider {
+    width: 2px;
+    background: #ddd;
+    margin: 0 8px;
+    align-self: stretch;
+  }
+
+  .col-title {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 30px;
+    font-weight: 900;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+  }
+
+  .col-subtitle {
+    font-size: 20px;
+    color: #888;
+    margin-bottom: 12px;
+  }
+
+  /* ── Flow steps ── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .flow-step {
+    background: #f5f5f5;
+    border-left: 6px solid #F0A500;
+    padding: 14px 24px;
+    font-size: 24px;
+    color: #1a1a1a;
+    width: 100%;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .flow-step strong { color: #E05A00; }
+
+  .flow-arrow {
+    font-size: 28px;
+    color: #1a1a1a;
+    line-height: 1;
+  }
+
+  /* ── Diagram boxes ── */
+  .diagram-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+  }
+
+  .box {
+    border: 3px solid #1a1a1a;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    background: #fff;
+  }
+
+  .box.yellow { background: #F0A500; }
+  .box.light  { background: #FFF8E7; border-color: #F0A500; }
+  .box.gray   { background: #f0f0f0; }
+  .box.orange { background: #E05A00; color: white; }
+
+  /* ── Code block ── */
+  .code-block {
+    background: #1a1a1a;
+    color: #f8f8f2;
+    padding: 24px 32px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    line-height: 1.7;
+    margin: 16px 0;
+  }
+
+  .code-key   { color: #FF79C6; }
+  .code-str   { color: #F1FA8C; }
+  .code-val   { color: #8BE9FD; }
+
+  /* ── Table ── */
+  table.compare {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 22px;
+  }
+
+  table.compare th {
+    background: #F0A500;
+    color: #1a1a1a;
+    font-weight: 900;
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 24px;
+  }
+
+  table.compare td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: top;
+  }
+
+  table.compare tr:nth-child(even) td { background: #fafafa; }
+
+  /* ── Grid cards ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    flex: 1;
+    align-content: center;
+  }
+
+  .card {
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card-icon { font-size: 36px; }
+  .card-title { font-size: 20px; font-weight: bold; color: #1a1a1a; }
+  .card-desc  { font-size: 17px; color: #555; }
+
+  /* ── Anatomy diagram ── */
+  .anatomy {
+    position: relative;
+    width: 800px;
+    height: 480px;
+    margin: 0 auto;
+  }
+
+  .anatomy .abox {
+    position: absolute;
+    border: 3px solid #1a1a1a;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    background: #fff;
+  }
+
+  .anatomy .abox.center-box {
+    background: #F0A500;
+    font-size: 24px;
+    width: 200px;
+    left: 300px;
+    top: 170px;
+  }
+
+  .anatomy .abox.top-box {
+    background: #FFF8E7;
+    border-color: #F0A500;
+    width: 200px;
+    left: 300px;
+    top: 20px;
+  }
+
+  .anatomy .abox.left-box {
+    background: #FFF8E7;
+    border-color: #F0A500;
+    width: 180px;
+    left: 40px;
+    top: 185px;
+  }
+
+  .anatomy .abox.right-box {
+    background: #FFF8E7;
+    border-color: #F0A500;
+    width: 180px;
+    right: 40px;
+    top: 185px;
+  }
+
+  .anatomy .abox.bottom-box {
+    background: #1a1a1a;
+    color: white;
+    border-color: #1a1a1a;
+    width: 200px;
+    left: 300px;
+    bottom: 20px;
+  }
+
+  /* SVG arrows inside anatomy */
+  .anatomy svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* ── Loop diagram ── */
+  .loop-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex: 1;
+  }
+
+  .loop-node {
+    width: 240px;
+    padding: 28px 20px;
+    border-radius: 50%;
+    border: 4px solid #F0A500;
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    background: #FFF8E7;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .loop-node .node-num {
+    font-size: 36px;
+    font-weight: 900;
+    color: #F0A500;
+  }
+
+  .loop-node .node-title {
+    font-size: 24px;
+    font-weight: 900;
+    color: #1a1a1a;
+  }
+
+  .loop-node .node-desc {
+    font-size: 17px;
+    color: #555;
+    font-weight: normal;
+  }
+
+  .loop-arrow {
+    font-size: 40px;
+    color: #F0A500;
+    font-weight: bold;
+    margin: 0 -10px;
+    z-index: 1;
+  }
+
+  /* ── MCP diagram ── */
+  .mcp-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .mcp-layer {
+    border: 3px solid #1a1a1a;
+    border-radius: 8px;
+    padding: 16px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mcp-layer.host   { background: #1a1a1a; color: white; }
+  .mcp-layer.client { background: #F0A500; }
+  .mcp-layer.servers{ background: #FFF8E7; border-color: #F0A500; }
+
+  .mcp-layer-title {
+    font-size: 22px;
+    font-weight: 900;
+  }
+
+  .mcp-servers-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .mcp-server-chip {
+    background: white;
+    border: 2px solid #F0A500;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #1a1a1a;
+  }
+
+  .mcp-arrow {
+    text-align: center;
+    font-size: 24px;
+    color: #888;
+  }
+
+  /* ── A2A diagram ── */
+  .a2a-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .a2a-orch {
+    background: #1a1a1a;
+    color: white;
+    border-radius: 8px;
+    padding: 16px 48px;
+    font-size: 24px;
+    font-weight: 900;
+  }
+
+  .a2a-agents {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+  }
+
+  .a2a-agent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .a2a-agent-box {
+    background: #F0A500;
+    border-radius: 8px;
+    padding: 14px 24px;
+    font-size: 20px;
+    font-weight: 900;
+    text-align: center;
+    min-width: 180px;
+  }
+
+  .a2a-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .a2a-tool-chip {
+    background: #f0f0f0;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 15px;
+    color: #555;
+  }
+
+  /* ── Memory types ── */
+  .memory-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    flex: 1;
+    align-content: center;
+  }
+
+  .memory-card {
+    border: 3px solid #F0A500;
+    border-radius: 10px;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .memory-card .mem-icon { font-size: 40px; }
+  .memory-card .mem-title {
+    font-size: 24px;
+    font-weight: 900;
+    color: #1a1a1a;
+  }
+  .memory-card .mem-desc { font-size: 19px; color: #555; }
+
+  /* ── Summary ── */
+  .summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .summary-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    font-size: 26px;
+    color: #1a1a1a;
+    background: #FFF8E7;
+    border-left: 6px solid #F0A500;
+    padding: 14px 24px;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .summary-num {
+    font-size: 30px;
+    font-weight: 900;
+    color: #F0A500;
+    flex-shrink: 0;
+    width: 36px;
+  }
+
+  /* ── Quote style ── */
+  .quote-box {
+    background: #FFF8E7;
+    border: 3px solid #F0A500;
+    border-radius: 8px;
+    padding: 28px 36px;
+    font-size: 26px;
+    color: #1a1a1a;
+    line-height: 1.5;
+    margin: 24px 0;
+  }
+
+  .quote-box strong { color: #E05A00; }
+
+  /* ── Chip row ── */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 20px 0;
+  }
+
+  .chip {
+    background: #FFF8E7;
+    border: 2px solid #F0A500;
+    border-radius: 24px;
+    padding: 8px 20px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Navigation ── */
+  #nav {
+    position: fixed;
+    bottom: 24px;
+    display: flex;
+    align-items: center;
+    z-index: 100;
+  }
+
+  #slide-counter {
+    color: #eee;
+    font-size: 18px;
+    font-family: Arial, sans-serif;
+    min-width: 72px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div id="slideshow-container">
+  <div id="slide-wrapper">
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 1 — CAPA
+    ══════════════════════════════════════════════ -->
+    <div class="slide active cover-slide" style="flex-direction:column; justify-content:flex-start; padding:60px 80px;">
+      <div class="cover-banner">
+        <h1>Agentes de LLM</h1>
+      </div>
+      <div class="cover-author">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <img src="https://gustavopinto.org/lost+found/ghlp4.png" style="width:240px; height:280px; object-fit:cover; border-radius:4px;">
+          <div class="author-name">Gustavo Pinto</div>
+        </div>
+        <div class="author-info">
+          <div class="author-contact">
+            <div class="contact-icon icon-twitter">🐦</div>
+            <span>@gustavopinto</span>
+          </div>
+          <div class="author-contact">
+            <div class="contact-icon icon-email">✉️</div>
+            <span>mail@gustavopinto.org</span>
+          </div>
+          <div class="author-contact">
+            <div class="contact-icon icon-web">🌐</div>
+            <span>gustavopinto.org</span>
+          </div>
+          <div class="author-contact">
+            <div class="contact-icon icon-linkedin" style="font-size:22px; font-weight:900;">in</div>
+            <span>linkedin.com/in/ghlp/</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 2 — AGENDA
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Agenda</span></div>
+      <div class="content" style="justify-content:center;">
+        <ul class="bullets">
+          <li>Módulo 1: Introdução aos LLMs + Prompt Engineering</li>
+          <li>Módulo 2: Embeddings e Armazenamento Vetorial</li>
+          <li>Módulo 3: Construindo Sistemas com RAG</li>
+          <li>Módulo 4: Avaliação de Qualidade de Respostas</li>
+          <li class="current"><span>Módulo 5: Agentes de LLM</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 3 — O QUE É UM AGENTE?
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Agentes</span></div>
+      <div class="content">
+        <div class="slide-title">O que é um Agente?</div>
+        <div class="quote-box">
+          Um agente é um sistema que usa um LLM como <strong>"cérebro"</strong> para perceber o ambiente, tomar decisões e executar ações de forma <strong>autônoma</strong> para atingir um objetivo.
+        </div>
+        <ul class="bullets" style="margin-top:16px;">
+          <li><strong>Percebe</strong> o ambiente — lê inputs, resultados de tools, contexto</li>
+          <li><strong>Raciocina</strong> e planeja — o LLM decide o que fazer a seguir</li>
+          <li><strong>Age</strong> no mundo — executa ferramentas, escreve, busca, calcula</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 4 — LLM VS AGENTE
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Agentes</span></div>
+      <div class="content">
+        <div class="slide-title">LLM vs Agente</div>
+        <div class="two-col" style="flex:1;">
+          <div class="col">
+            <div class="col-title">🤖 LLM puro</div>
+            <div class="col-subtitle">Responde e para</div>
+            <div class="flow">
+              <div class="flow-step">📥 Recebe prompt do usuário</div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step">🧠 Processa e gera texto</div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step">📤 Entrega a resposta</div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step" style="border-color:#ccc; color:#888;">⏹ Fim</div>
+            </div>
+          </div>
+          <div class="col-divider"></div>
+          <div class="col">
+            <div class="col-title">🕵️ Agente</div>
+            <div class="col-subtitle">Raciocina, age e itera</div>
+            <div class="flow">
+              <div class="flow-step">🎯 Recebe <strong>objetivo</strong></div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step">🧠 Planeja próxima ação</div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step">⚙️ Usa tools / age no mundo</div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step">👁 Observa o resultado</div>
+              <div class="flow-arrow">↓ <span style="font-size:18px;color:#E05A00;">(itera até concluir)</span></div>
+              <div class="flow-step" style="background:#F0A500;">✅ Entrega resultado final</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 5 — ANATOMIA DE UM AGENTE
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Agentes</span></div>
+      <div class="content">
+        <div class="slide-title">Anatomia de um Agente</div>
+        <div class="diagram-center">
+          <div class="anatomy">
+            <svg viewBox="0 0 800 480">
+              <!-- top arrow -->
+              <line x1="400" y1="100" x2="400" y2="165" stroke="#1a1a1a" stroke-width="3" marker-end="url(#arr)"/>
+              <!-- left arrow -->
+              <line x1="220" y1="222" x2="295" y2="222" stroke="#1a1a1a" stroke-width="3" marker-end="url(#arr)"/>
+              <!-- right arrow -->
+              <line x1="505" y1="222" x2="580" y2="222" stroke="#1a1a1a" stroke-width="3" marker-end="url(#arr)"/>
+              <!-- bottom arrow -->
+              <line x1="400" y1="285" x2="400" y2="360" stroke="#1a1a1a" stroke-width="3" marker-end="url(#arr)"/>
+              <defs>
+                <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L8,3 z" fill="#1a1a1a"/>
+                </marker>
+              </defs>
+            </svg>
+            <div class="abox top-box">🗓 Planejamento<br><span style="font-size:15px;font-weight:normal;">chain-of-thought</span></div>
+            <div class="abox left-box">💾 Memória<br><span style="font-size:15px;font-weight:normal;">contexto + histórico</span></div>
+            <div class="abox center-box">🧠 LLM<br><span style="font-size:15px;">(cérebro)</span></div>
+            <div class="abox right-box">🔧 Tools<br><span style="font-size:15px;font-weight:normal;">funções externas</span></div>
+            <div class="abox bottom-box">📤 Ação / Output</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 6 — LOOP PERCEBER → PENSAR → AGIR
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Agentes</span></div>
+      <div class="content">
+        <div class="slide-title">Loop: Perceber → Pensar → Agir</div>
+        <div class="loop-diagram">
+          <div class="loop-node">
+            <div class="node-num">1</div>
+            <div class="node-title">PERCEBER</div>
+            <div class="node-desc">Lê inputs do ambiente, resultados de tools, contexto atual</div>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div class="loop-node">
+            <div class="node-num">2</div>
+            <div class="node-title">PENSAR</div>
+            <div class="node-desc">LLM raciocina e decide qual ação executar a seguir</div>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div class="loop-node">
+            <div class="node-num">3</div>
+            <div class="node-title">AGIR</div>
+            <div class="node-desc">Executa tool, escreve resposta ou encerra a tarefa</div>
+          </div>
+        </div>
+        <div style="text-align:center; font-size:22px; color:#888; margin-top:8px;">
+          ↺ O loop continua até o objetivo ser atingido
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 7 — O QUE SÃO TOOLS?
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Tools</span></div>
+      <div class="content">
+        <div class="slide-title">O que são Tools?</div>
+        <div class="slide-body">
+          Tools são <strong>funções externas</strong> que o LLM pode invocar para interagir com o mundo real — ir além do que está no seu treinamento.
+        </div>
+        <div class="chips">
+          <div class="chip">🔍 Busca na web</div>
+          <div class="chip">🧮 Calculadora</div>
+          <div class="chip">🗄️ Banco de dados</div>
+          <div class="chip">🌤 API de clima</div>
+          <div class="chip">📧 Enviar e-mail</div>
+          <div class="chip">💻 Executar código</div>
+          <div class="chip">📁 Sistema de arquivos</div>
+          <div class="chip">📅 Calendário</div>
+          <div class="chip">💳 Pagamentos</div>
+        </div>
+        <div class="quote-box" style="margin-top:auto;">
+          Sem tools, o LLM apenas <strong>fala sobre</strong> o mundo.<br>
+          Com tools, o LLM <strong>age</strong> no mundo.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 8 — LLM SEM TOOLS VS COM TOOLS
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Tools</span></div>
+      <div class="content">
+        <div class="slide-title">Sem Tools vs Com Tools</div>
+        <div class="two-col" style="flex:1;">
+          <div class="col">
+            <div class="col-title">❌ LLM sem tools</div>
+            <div style="background:#fff3f3; border:2px solid #e57373; border-radius:8px; padding:18px 20px; font-size:20px; margin-bottom:16px;">
+              "Qual é a temperatura em Recife agora?"
+            </div>
+            <div class="flow">
+              <div class="flow-step">🧠 LLM responde com dados do treinamento</div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step" style="border-color:#e57373; color:#c62828;">"Em Recife, as temperaturas típicas em abril ficam em torno de 28°C..."</div>
+            </div>
+            <div style="margin-top:16px; font-size:18px; color:#c62828;">⚠️ Dado possivelmente desatualizado</div>
+          </div>
+          <div class="col-divider"></div>
+          <div class="col">
+            <div class="col-title">✅ LLM com tools</div>
+            <div style="background:#fff3f3; border:2px solid #e57373; border-radius:8px; padding:18px 20px; font-size:20px; margin-bottom:16px;">
+              "Qual é a temperatura em Recife agora?"
+            </div>
+            <div class="flow">
+              <div class="flow-step">🧠 LLM decide usar a tool <code>get_weather</code></div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step" style="background:#1a1a1a; color:#F0A500; font-family:monospace;">get_weather(city="Recife")<br>→ { "temp": 31, "cond": "Sol" }</div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step" style="border-color:#43a047; color:#1b5e20;">"Agora em Recife está 31°C com sol!"</div>
+            </div>
+            <div style="margin-top:16px; font-size:18px; color:#2e7d32;">✅ Dado real e atualizado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 9 — FUNCTION CALLING
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Tools</span></div>
+      <div class="content">
+        <div class="slide-title">Como funciona? Function Calling</div>
+        <div style="display:flex; gap:48px; flex:1; align-items:center;">
+          <div class="flow" style="flex:1;">
+            <div class="flow-step"><strong>1.</strong> Usuário envia pergunta ao agente</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step"><strong>2.</strong> LLM decide qual tool usar e gera parâmetros</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step"><strong>3.</strong> Sistema executa a função localmente</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step"><strong>4.</strong> Resultado retorna ao LLM como contexto</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step" style="background:#F0A500;"><strong>5.</strong> LLM formula a resposta final</div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:18px; color:#888; margin-bottom:8px;">Exemplo de tool call gerado pelo LLM:</div>
+            <div class="code-block">
+{<br>
+&nbsp;&nbsp;<span class="code-key">"tool"</span>: <span class="code-str">"get_weather"</span>,<br>
+&nbsp;&nbsp;<span class="code-key">"params"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"city"</span>: <span class="code-str">"Recife"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"unit"</span>: <span class="code-str">"celsius"</span><br>
+&nbsp;&nbsp;}<br>
+}
+            </div>
+            <div style="font-size:18px; color:#888; margin-top:16px; margin-bottom:8px;">Resultado retornado:</div>
+            <div class="code-block">
+{<br>
+&nbsp;&nbsp;<span class="code-key">"temp"</span>: <span class="code-val">31</span>,<br>
+&nbsp;&nbsp;<span class="code-key">"condition"</span>: <span class="code-str">"Ensolarado"</span>,<br>
+&nbsp;&nbsp;<span class="code-key">"humidity"</span>: <span class="code-val">72</span><br>
+}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 10 — TOOLS NA PRÁTICA
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Tools</span></div>
+      <div class="content">
+        <div class="slide-title">Tools na Prática</div>
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-icon">🔍</div>
+            <div class="card-title">Busca Web</div>
+            <div class="card-desc">Brave Search, Perplexity, Google — dados em tempo real</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">💻</div>
+            <div class="card-title">Execução de Código</div>
+            <div class="card-desc">Code Interpreter — roda Python, analisa dados, gera gráficos</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🗄️</div>
+            <div class="card-title">Banco de Dados</div>
+            <div class="card-desc">Executa queries SQL, consulta vetores, busca documentos</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">📧</div>
+            <div class="card-title">E-mail / Calendário</div>
+            <div class="card-desc">Gmail, Google Calendar — lê, envia, agenda reuniões</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🌐</div>
+            <div class="card-title">APIs Externas</div>
+            <div class="card-desc">Clima, cotações, pagamentos, serviços REST</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">📁</div>
+            <div class="card-title">Sistema de Arquivos</div>
+            <div class="card-desc">Lê, escreve e organiza arquivos locais ou na nuvem</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 11 — O QUE É O MCP?
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">MCP</span></div>
+      <div class="content">
+        <div class="slide-title">Model Context Protocol</div>
+        <div class="slide-subtitle">Criado pela Anthropic — 2024</div>
+        <div class="slide-body" style="margin-bottom:24px;">
+          Protocolo <strong>aberto e padronizado</strong> que define como LLMs se conectam a ferramentas e fontes de dados externas.
+        </div>
+        <div class="quote-box">
+          💡 O MCP é para LLMs o que o <strong>USB</strong> é para dispositivos:<br>
+          um <strong>padrão universal de conexão</strong>.
+        </div>
+        <div style="display:flex; gap:24px; margin-top:28px;">
+          <div class="card" style="flex:1; border-color:#F0A500;">
+            <div class="card-icon">📐</div>
+            <div class="card-title">Padronização</div>
+            <div class="card-desc">Um protocolo, qualquer LLM e qualquer tool</div>
+          </div>
+          <div class="card" style="flex:1; border-color:#F0A500;">
+            <div class="card-icon">🔒</div>
+            <div class="card-title">Segurança</div>
+            <div class="card-desc">Controle explícito sobre o que o LLM pode acessar</div>
+          </div>
+          <div class="card" style="flex:1; border-color:#F0A500;">
+            <div class="card-icon">♻️</div>
+            <div class="card-title">Reusabilidade</div>
+            <div class="card-desc">Escreva um MCP Server, use em qualquer host</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 12 — ARQUITETURA DO MCP
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">MCP</span></div>
+      <div class="content">
+        <div class="slide-title">Arquitetura do MCP</div>
+        <div class="mcp-stack">
+          <div class="mcp-layer host">
+            <div class="mcp-layer-title">🖥 Host Application (LLM)</div>
+            <div style="font-size:18px; opacity:0.8;">Claude Desktop &nbsp;·&nbsp; Cursor &nbsp;·&nbsp; VS Code &nbsp;·&nbsp; seu app</div>
+          </div>
+          <div class="mcp-arrow">⇅ &nbsp;MCP Protocol (JSON-RPC)</div>
+          <div class="mcp-layer client" style="border-color:#c87f00;">
+            <div class="mcp-layer-title">🔌 MCP Client</div>
+            <div style="font-size:18px;">Camada de comunicação — traduz pedidos do LLM para os servidores</div>
+          </div>
+          <div class="mcp-arrow">⇅ &nbsp;stdio / HTTP / SSE</div>
+          <div class="mcp-layer servers">
+            <div class="mcp-layer-title" style="color:#1a1a1a;">⚙️ MCP Servers</div>
+            <div class="mcp-servers-row">
+              <div class="mcp-server-chip">📁 Filesystem</div>
+              <div class="mcp-server-chip">🐙 GitHub</div>
+              <div class="mcp-server-chip">🗄️ Postgres</div>
+              <div class="mcp-server-chip">💬 Slack</div>
+              <div class="mcp-server-chip">🌐 Browser</div>
+              <div class="mcp-server-chip">📧 Gmail</div>
+              <div class="mcp-server-chip">🔍 Brave Search</div>
+              <div class="mcp-server-chip">+ centenas...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 13 — MCP SERVER VS CLIENT
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">MCP</span></div>
+      <div class="content">
+        <div class="slide-title">MCP Client vs MCP Server</div>
+        <div class="two-col" style="flex:1;">
+          <div class="col">
+            <div class="col-title">🔌 MCP Client</div>
+            <ul class="bullets" style="font-size:22px; gap:14px;">
+              <li>Roda dentro do host / aplicação</li>
+              <li>Faz requisições aos servidores</li>
+              <li>Mantém uma conexão por servidor</li>
+              <li>Exemplos: Claude Desktop, Cursor</li>
+            </ul>
+          </div>
+          <div class="col-divider"></div>
+          <div class="col">
+            <div class="col-title">⚙️ MCP Server</div>
+            <ul class="bullets" style="font-size:22px; gap:14px;">
+              <li>Expõe capacidades ao LLM</li>
+              <li>Responde requisições do client</li>
+              <li>Executa operações reais</li>
+              <li>Exemplos: server de filesystem, GitHub</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top:24px;">
+          <div style="font-size:20px; font-weight:bold; margin-bottom:12px;">Tipos de recursos que um MCP Server pode expor:</div>
+          <div class="chips">
+            <div class="chip">🔧 Tools (funções executáveis)</div>
+            <div class="chip">📄 Resources (dados/arquivos)</div>
+            <div class="chip">📝 Prompts (templates)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 14 — MCP NA PRÁTICA
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">MCP</span></div>
+      <div class="content">
+        <div class="slide-title">MCP na Prática</div>
+        <div style="font-size:22px; margin-bottom:16px;">Exemplo: Claude Desktop + MCP Server de Filesystem</div>
+        <div style="display:flex; gap:40px; flex:1; align-items:flex-start;">
+          <div style="flex:1.1;">
+            <div style="font-size:18px; color:#888; margin-bottom:8px;">Configuração em <code>claude_desktop_config.json</code>:</div>
+            <div class="code-block">
+{<br>
+&nbsp;&nbsp;<span class="code-key">"mcpServers"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"filesystem"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"command"</span>: <span class="code-str">"npx"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"args"</span>: [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-str">"-y"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-str">"@modelcontextprotocol/server-filesystem"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-str">"/Users/gustavo/projetos"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+            </div>
+          </div>
+          <div style="flex:0.9; display:flex; flex-direction:column; gap:16px; padding-top:28px;">
+            <div class="flow-step">✅ Claude lê arquivos locais</div>
+            <div class="flow-step">✅ Claude escreve e edita arquivos</div>
+            <div class="flow-step">✅ Claude lista diretórios</div>
+            <div class="flow-step">✅ Tudo com controle do usuário</div>
+            <div style="margin-top:12px; font-size:18px; color:#888;">
+              👉 Sem escrever nenhum código de integração — só configurar o servidor.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 15 — O QUE É O A2A?
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">A2A</span></div>
+      <div class="content">
+        <div class="slide-title">Agent-to-Agent Protocol</div>
+        <div class="slide-subtitle">Criado pelo Google — 2025</div>
+        <div class="slide-body" style="margin-bottom:24px;">
+          Protocolo que permite que <strong>agentes de IA se comuniquem e colaborem</strong> entre si, independente de qual empresa ou framework os criou.
+        </div>
+        <div class="quote-box">
+          🔑 Diferença chave:<br><br>
+          <strong>MCP</strong> conecta &nbsp; LLM ↔ Ferramentas<br>
+          <strong>A2A</strong> conecta &nbsp; Agente ↔ Agente
+        </div>
+        <ul class="bullets" style="margin-top:24px; font-size:24px;">
+          <li>Agentes anunciam suas capacidades via <strong>Agent Card</strong></li>
+          <li>Comunicação via HTTP + JSON — interoperável por design</li>
+          <li>Suporte a tarefas longas e respostas em streaming</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 16 — ARQUITETURA A2A
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">A2A</span></div>
+      <div class="content">
+        <div class="slide-title">Arquitetura A2A</div>
+        <div class="a2a-diagram">
+          <div style="font-size:18px; color:#888;">Usuário envia objetivo</div>
+          <div style="font-size:24px; color:#888;">↓</div>
+          <div class="a2a-orch">🎯 Agente Orquestrador</div>
+          <div style="display:flex; gap:60px; align-items:flex-start;">
+            <div style="font-size:30px; color:#888; margin-top:8px; letter-spacing:24px;">↙ ↓ ↘</div>
+          </div>
+          <div class="a2a-agents">
+            <div class="a2a-agent">
+              <div class="a2a-agent-box">🔍 Agente<br>Pesquisador</div>
+              <div style="font-size:14px; color:#888;">↑ tools</div>
+              <div class="a2a-tools">
+                <div class="a2a-tool-chip">Busca Web</div>
+                <div class="a2a-tool-chip">Leitura PDF</div>
+              </div>
+            </div>
+            <div class="a2a-agent">
+              <div class="a2a-agent-box">💻 Agente<br>de Código</div>
+              <div style="font-size:14px; color:#888;">↑ tools</div>
+              <div class="a2a-tools">
+                <div class="a2a-tool-chip">Python REPL</div>
+                <div class="a2a-tool-chip">GitHub API</div>
+              </div>
+            </div>
+            <div class="a2a-agent">
+              <div class="a2a-agent-box">✍️ Agente<br>Redator</div>
+              <div style="font-size:14px; color:#888;">↑ tools</div>
+              <div class="a2a-tools">
+                <div class="a2a-tool-chip">Google Docs</div>
+                <div class="a2a-tool-chip">Revisor</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:18px; color:#888;">↑ resultados retornam ao orquestrador</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 17 — MCP VS A2A
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">A2A</span></div>
+      <div class="content">
+        <div class="slide-title">MCP vs A2A: quando usar?</div>
+        <table class="compare" style="margin-top:16px;">
+          <tr>
+            <th>Aspecto</th>
+            <th>MCP</th>
+            <th>A2A</th>
+          </tr>
+          <tr>
+            <td><strong>Criado por</strong></td>
+            <td>Anthropic (2024)</td>
+            <td>Google (2025)</td>
+          </tr>
+          <tr>
+            <td><strong>Propósito</strong></td>
+            <td>LLM acessar ferramentas externas</td>
+            <td>Agentes colaborarem entre si</td>
+          </tr>
+          <tr>
+            <td><strong>Quem se conecta</strong></td>
+            <td>LLM ↔ Tool / Dado</td>
+            <td>Agente ↔ Agente</td>
+          </tr>
+          <tr>
+            <td><strong>Quando usar</strong></td>
+            <td>Preciso que o LLM acesse filesystem, banco de dados, APIs</td>
+            <td>Preciso de múltiplos agentes especializados colaborando</td>
+          </tr>
+          <tr>
+            <td><strong>São exclusivos?</strong></td>
+            <td colspan="2" style="text-align:center; color:#E05A00; font-weight:bold;">Não — podem (e devem) ser usados juntos!</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 18 — MEMÓRIA EM AGENTES
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Extras</span></div>
+      <div class="content">
+        <div class="slide-title">Tipos de Memória em Agentes</div>
+        <div class="memory-grid">
+          <div class="memory-card">
+            <div class="mem-icon">📝</div>
+            <div class="mem-title">In-Context (curto prazo)</div>
+            <div class="mem-desc">Informação no prompt atual. Rápida, mas temporária — desaparece ao fim da sessão.</div>
+          </div>
+          <div class="memory-card">
+            <div class="mem-icon">💾</div>
+            <div class="mem-title">Externa (longo prazo)</div>
+            <div class="mem-desc">Banco de dados vetorial ou SQL. Persistente entre sessões. Recuperada via busca semântica.</div>
+          </div>
+          <div class="memory-card">
+            <div class="mem-icon">📖</div>
+            <div class="mem-title">Episódica</div>
+            <div class="mem-desc">Histórico de conversas e interações anteriores. Permite ao agente lembrar de usuários e preferências.</div>
+          </div>
+          <div class="memory-card">
+            <div class="mem-icon">📚</div>
+            <div class="mem-title">Semântica</div>
+            <div class="mem-desc">Conhecimento de domínio: fatos, regras, documentos. Base de conhecimento consultada via RAG.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 19 — SISTEMAS MULTI-AGENTE
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Extras</span></div>
+      <div class="content">
+        <div class="slide-title">Sistemas Multi-Agente</div>
+        <div style="font-size:26px; margin-bottom:24px; color:#1a1a1a;">Por que usar múltiplos agentes?</div>
+        <ul class="bullets" style="margin-bottom:28px;">
+          <li><strong>Especialização:</strong> cada agente focado em uma tarefa específica</li>
+          <li><strong>Paralelismo:</strong> agentes trabalhando simultaneamente, mais rápido</li>
+          <li><strong>Confiabilidade:</strong> agentes verificam o trabalho uns dos outros</li>
+        </ul>
+        <div class="quote-box">
+          <strong>Exemplo:</strong> "Gere um relatório de mercado sobre IA no Brasil"<br><br>
+          🔍 Agente Pesquisador &nbsp;→&nbsp; busca e coleta dados<br>
+          📊 Agente Analista &nbsp;→&nbsp; processa e extrai insights<br>
+          ✍️ Agente Redator &nbsp;→&nbsp; escreve o relatório final<br>
+          🔎 Agente Revisor &nbsp;→&nbsp; verifica fatos e qualidade
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SLIDE 20 — RESUMO
+    ══════════════════════════════════════════════ -->
+    <div class="slide" style="flex-direction:row;">
+      <div class="sidebar"><span class="sidebar-label">Resumo</span></div>
+      <div class="content">
+        <div class="slide-title">O que aprendemos hoje</div>
+        <div class="summary-list">
+          <div class="summary-item">
+            <div class="summary-num">1</div>
+            <div>Agentes usam LLMs como cérebro em loops de <strong>perceber → pensar → agir</strong></div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-num">2</div>
+            <div>A diferença chave: LLMs <strong>respondem</strong>, agentes <strong>executam</strong> e iteram</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-num">3</div>
+            <div><strong>Tools</strong> permitem que LLMs interajam com o mundo real via function calling</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-num">4</div>
+            <div><strong>MCP</strong> padroniza a conexão entre LLMs e ferramentas externas</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-num">5</div>
+            <div><strong>A2A</strong> padroniza a comunicação e colaboração entre agentes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /slide-wrapper -->
+</div><!-- /slideshow-container -->
+
+<div id="nav">
+  <span id="slide-counter">1 / 20</span>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  function scaleSlides() {
+    const wrapper = document.getElementById('slide-wrapper');
+    const scaleX = window.innerWidth / 1456;
+    const scaleY = window.innerHeight / 816;
+    const scale = Math.min(scaleX, scaleY) * 0.97;
+    wrapper.style.transform = `scale(${scale})`;
+  }
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    current = (n + total) % total;
+    slides[current].classList.add('active');
+    document.getElementById('slide-counter').textContent = `${current + 1} / ${total}`;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') goTo(current + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    goTo(current - 1);
+    if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  window.addEventListener('resize', scaleSlides);
+  scaleSlides();
+</script>
+</body>
+</html>
