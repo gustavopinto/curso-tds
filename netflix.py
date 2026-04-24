@@ -1,25 +1,42 @@
-from ollama import embed
-from scipy import spatial
+import argparse
+from src.config import LLM_MODEL, EMBED_MODEL
+from src.database import connect, setup, search_filmes
+from src.embeddings import embed
+from src.llm import ask
 
-filmes = [
-    "Interestelar: ficção científica, espaço, drama, viagem no tempo",
-    "Gravidade: ficção científica, espaço, sobrevivência, tensão",
-    "Toy Story: animação, amizade, aventura, comédia",
-    "O Poderoso Chefão: máfia, crime, família, drama"
-]
 
-filme_base = "Tropa de Elite: polícia, estratégia, crime, violência"
+def main():
+    parser = argparse.ArgumentParser(description="RAG com Ollama e pgvector")
+    parser.add_argument("--model", default=LLM_MODEL, help="Modelo LLM do Ollama")
+    args = parser.parse_args()
 
-todos = [filme_base] + filmes
+    conn = connect()
+    setup(conn, len(embed("warmup")))
 
-response = embed(
-    model="embeddinggemma",
-    input=todos
-)
+    print(f"RAG | LLM: {args.model} | Embeddings: {EMBED_MODEL}")
+    print("Digite /quit para sair.\n")
 
-embeddings = response["embeddings"]
-embedding_base = embeddings[0]
+    while True:
+        try:
+            line = input("> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            break
 
-for i in range(1, len(embeddings)):
-    score = 1 - spatial.distance.cosine(embedding_base, embeddings[i])
-    print(f"Similaridade com '{filmes[i-1]}': {score:.4f}")
+        if not line:
+            continue
+        if line == "/quit":
+            break
+
+        ctx = search_filmes(conn, line)
+        if ctx:
+            print("\n<inicio>contexto recuperado</inicio>")
+            for i, doc in enumerate(ctx, 1):
+                print(f"  [{i}] {doc[:120]}{'...' if len(doc) > 120 else ''}")
+            print("<fim>contexto recuperado</fim>\n")
+        print(ask(args.model, line, ctx))
+
+    conn.close()
+
+
+if __name__ == "__main__":
+    main()
