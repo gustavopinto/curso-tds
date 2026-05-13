@@ -1,8 +1,0 @@
-ollama
-numpy
-scipy
-psycopg2-binary
-pgvector
-python-dotenv
-deepeval
-pytest
