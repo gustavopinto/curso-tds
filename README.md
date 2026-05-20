@@ -76,6 +76,54 @@ python netflix.py --model mistral   # sobrescreve o LLM_MODEL do .env
 
 Digite `/quit` para sair.
 
+## Testes com deepeval
+
+Os testes em `tests/` usam [`deepeval`](https://docs.confident-ai.com/) para avaliar respostas do LLM e do pipeline RAG. As métricas (relevância, fidelidade, viés, etc.) são calculadas por um modelo "juiz" — neste projeto, o próprio Ollama local definido em `LLM_MODEL`.
+
+**Pré-requisitos:** Ollama rodando, `docker compose up -d` ativo, modelos baixados e (para os testes de RAG) o catálogo já ingerido com `python ingest.py catalogo_de_filmes.json`.
+
+**Executar:**
+
+```bash
+deepeval test run tests/                        # todos os testes
+deepeval test run tests/test_base.py            # arquivo específico
+deepeval test run tests/test_base.py -v         # saída detalhada
+deepeval test run tests/ -c                     # ignora cache e re-executa
+```
+
+### Exemplo: criando um teste simples
+
+Crie `tests/test_exemplo.py`:
+
+```python
+from deepeval import assert_test
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import AnswerRelevancyMetric
+from src.config import LLM_MODEL
+from src.llm import ask
+
+def test_recomendacao_comedia(judge):
+    query = "Quero rir hoje, sugere uma comédia"
+
+    test_case = LLMTestCase(
+        input=query,
+        actual_output=ask(LLM_MODEL, query),
+        expected_output="Uma boa recomendação de comédia.",
+    )
+
+    assert_test(test_case, [
+        AnswerRelevancyMetric(threshold=0.5, model=judge),
+    ])
+```
+
+A fixture `judge` (definida em `tests/conftest.py`) já está disponível em todos os testes e fornece o juiz Ollama. Para testes que dependem do banco vetorial, adicione a fixture `db` na assinatura — veja `tests/test_rag_metrics.py`.
+
+**Rodar o novo teste:**
+
+```bash
+deepeval test run tests/test_exemplo.py -v
+```
+
 ## Variáveis de ambiente
 
 | Variável | Padrão | Descrição |
